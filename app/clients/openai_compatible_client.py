@@ -130,7 +130,6 @@ class OpenAICompatibleClient(BaseClient):
         buffer = ""
         try:
             async for chunk in self._make_request(headers, data):
-                logger.debug(f"接收到数据：{chunk}，数据：{data}")
                 buffer += chunk.decode("utf-8")
                 
                 # 处理 buffer 中的数据行
@@ -163,3 +162,4 @@ class OpenAICompatibleClient(BaseClient):
             error_msg = f"Stream chat请求失败: {str(e)}"
             logger.error(error_msg)
             raise ClientError(error_msg)
+        logger.debug(f"接收到数据：{buffer}，数据：{data}")
