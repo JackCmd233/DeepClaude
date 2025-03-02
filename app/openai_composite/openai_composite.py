@@ -40,6 +40,8 @@ class OpenAICompatibleComposite:
         model_arg: tuple[float, float, float, float],
         deepseek_model: str = "deepseek-reasoner",
         target_model: str = "",
+        max_tokens: int = 8192,
+        openai_composite_max_tokens: int = 8192,
     ) -> AsyncGenerator[bytes, None]:
         """处理完整的流式输出过程
 
@@ -48,6 +50,8 @@ class OpenAICompatibleComposite:
             model_arg: 模型参数 (temperature, top_p, presence_penalty, frequency_penalty)
             deepseek_model: DeepSeek 模型名称
             target_model: 目标 OpenAI 兼容模型名称
+            max_tokens: 最大输出长度
+            openai_composite_max_tokens: OpenAI 兼容模型的最大输出长度
 
         Yields:
             字节流数据，格式如下：
@@ -82,7 +86,7 @@ class OpenAICompatibleComposite:
             logger.info(f"开始处理 DeepSeek 流，使用模型：{deepseek_model}")
             try:
                 async for content_type, content in self.deepseek_client.stream_chat(
-                    messages, deepseek_model, self.is_origin_reasoning
+                    messages, deepseek_model, self.is_origin_reasoning, max_tokens
                 ):
                     if content_type == "reasoning":
                         reasoning_content.append(content)
@@ -91,6 +95,7 @@ class OpenAICompatibleComposite:
                             "object": "chat.completion.chunk",
                             "created": created_time,
                             "model": deepseek_model,
+                            "max_tokens": max_tokens,
                             "choices": [
                                 {
                                     "index": 0,
@@ -150,17 +155,19 @@ class OpenAICompatibleComposite:
                 fixed_content = f"Here's my original input:\n{original_content}\n\n{combined_content}"
                 last_message["content"] = fixed_content
 
-                logger.info(f"开始处理 OpenAI 兼容流，使用模型: {target_model}")
+                logger.info(f"开始处理 OpenAI 兼容流，使用模型: {target_model}，模型长度为: {openai_composite_max_tokens}")
 
                 async for role, content in self.openai_client.stream_chat(
                     messages=openai_messages,
                     model=target_model,
+                    max_tokens=openai_composite_max_tokens,
                 ):
                     response = {
                         "id": chat_id,
                         "object": "chat.completion.chunk",
                         "created": created_time,
                         "model": target_model,
+                        "max_tokens": openai_composite_max_tokens,
                         "choices": [
                             {
                                 "index": 0,
@@ -193,12 +200,17 @@ class OpenAICompatibleComposite:
         # 发送结束标记
         yield b"data: [DONE]\n\n"
 
+    '''
+    处理非流式输出请求
+    '''
     async def chat_completions_without_stream(
         self,
         messages: List[Dict[str, str]],
         model_arg: tuple[float, float, float, float],
         deepseek_model: str = "deepseek-reasoner",
         target_model: str = "",
+        max_tokens: int = 8192,
+        openai_composite_max_tokens: int = 8192,
     ) -> Dict[str, Any]:
         """处理非流式输出请求
 
@@ -216,13 +228,15 @@ class OpenAICompatibleComposite:
             "object": "chat.completion",
             "created": int(time.time()),
             "model": target_model,
+            max_tokens: max_tokens,
             "choices": [],
             "usage": {},
         }
 
         content_parts = []
+        # 暂时调用 DeepSeek 的流式输出
         async for chunk in self.chat_completions_with_stream(
-            messages, model_arg, deepseek_model, target_model
+            messages, model_arg, deepseek_model, target_model, max_tokens,openai_composite_max_tokens,
         ):
             if chunk != b"data: [DONE]\n\n":
                 try:

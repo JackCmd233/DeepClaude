@@ -26,16 +26,19 @@ CLAUDE_PROVIDER = os.getenv(
     "CLAUDE_PROVIDER", "anthropic"
 )  # Claude模型提供商, 默认为anthropic
 CLAUDE_API_URL = os.getenv("CLAUDE_API_URL", "https://api.anthropic.com/v1/messages")
+CLAUDE_MAX_TOKENS = os.getenv("CLAUDE_MAX_TOKENS", 199900)
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = os.getenv(
     "DEEPSEEK_API_URL", "https://api.deepseek.com/v1/chat/completions"
 )
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-reasoner")
+DEEPSEEK_MAX_TOKENS = os.getenv("DEEPSEEK_MAX_TOKENS", 8192)
 
 OPENAI_COMPOSITE_API_KEY = os.getenv("OPENAI_COMPOSITE_API_KEY")
 OPENAI_COMPOSITE_API_URL = os.getenv("OPENAI_COMPOSITE_API_URL")
 OPENAI_COMPOSITE_MODEL = os.getenv("OPENAI_COMPOSITE_MODEL")
+OPENAI_COMPOSITE_MAX_TOKENS = os.getenv("OPENAI_COMPOSITE_MAX_TOKENS", 8192)
 
 IS_ORIGIN_REASONING = os.getenv("IS_ORIGIN_REASONING", "True").lower() == "true"
 
@@ -142,6 +145,8 @@ async def chat_completions(request: Request):
                         model_arg=model_arg[:4],
                         deepseek_model=DEEPSEEK_MODEL,
                         claude_model=claude_model,
+                        max_tokens=DEEPSEEK_MAX_TOKENS,
+                        claude_model_max_tokens=CLAUDE_MAX_TOKENS,
                     ),
                     media_type="text/event-stream",
                 )
@@ -151,6 +156,8 @@ async def chat_completions(request: Request):
                     model_arg=model_arg[:4],
                     deepseek_model=DEEPSEEK_MODEL,
                     claude_model=claude_model,
+                    max_tokens=DEEPSEEK_MAX_TOKENS,
+                    claude_model_max_tokens=CLAUDE_MAX_TOKENS,
                 )
         else:
             # 使用 OpenAI 兼容组合模型
@@ -161,6 +168,8 @@ async def chat_completions(request: Request):
                         model_arg=model_arg[:4],
                         deepseek_model=DEEPSEEK_MODEL,
                         target_model=OPENAI_COMPOSITE_MODEL,
+                        max_tokens=DEEPSEEK_MAX_TOKENS,
+                        openai_composite_max_tokens=OPENAI_COMPOSITE_MAX_TOKENS,
                     ),
                     media_type="text/event-stream",
                 )
@@ -170,6 +179,8 @@ async def chat_completions(request: Request):
                     model_arg=model_arg[:4],
                     deepseek_model=DEEPSEEK_MODEL,
                     target_model=OPENAI_COMPOSITE_MODEL,
+                    max_tokens=DEEPSEEK_MAX_TOKENS,
+                    openai_composite_max_tokens=OPENAI_COMPOSITE_MAX_TOKENS,
                 )
 
     except Exception as e:

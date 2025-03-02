@@ -24,6 +24,7 @@ class BaseClient(ABC):
         api_key: str,
         api_url: str,
         timeout: Optional[aiohttp.ClientTimeout] = None,
+        max_tokens: int = 1000,
     ):
         """初始化基础客户端
 
@@ -35,6 +36,7 @@ class BaseClient(ABC):
         self.api_key = api_key
         self.api_url = api_url
         self.timeout = timeout or self.DEFAULT_TIMEOUT
+        self.max_tokens = max_tokens
 
     async def _make_request(
         self, headers: dict, data: dict, timeout: Optional[aiohttp.ClientTimeout] = None

@@ -50,12 +50,15 @@ class DeepSeekClient(BaseClient):
         messages: list,
         model: str = "deepseek-ai/DeepSeek-R1",
         is_origin_reasoning: bool = True,
+        max_tokens: int  = 8192,
     ) -> AsyncGenerator[tuple[str, str], None]:
         """流式对话
 
         Args:
             messages: 消息列表
             model: 模型名称
+            is_origin_reasoning: 是否使用原生推理
+            max_tokens: 最大输出长度
 
         Yields:
             tuple[str, str]: (内容类型, 内容)
@@ -67,10 +70,13 @@ class DeepSeekClient(BaseClient):
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
         }
+        # 强制类型转换（防御性编程）
+        max_tokens = int(max_tokens)
         data = {
             "model": model,
             "messages": messages,
             "stream": True,
+            "max_tokens": max_tokens,
         }
 
         logger.debug(f"开始流式对话：{data}")

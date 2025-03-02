@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 
 from app.utils.logger import logger
 
-from .base_client import BaseClient
+from app.clients.base_client import BaseClient
 
 
 class ClaudeClient(BaseClient):
@@ -32,6 +32,7 @@ class ClaudeClient(BaseClient):
         model: str,
         stream: bool = True,
         system_prompt: str = None,
+        max_tokens: int = 8192,
     ) -> AsyncGenerator[tuple[str, str], None]:
         """流式或非流式对话
 
@@ -41,6 +42,7 @@ class ClaudeClient(BaseClient):
             model: 模型名称。如果是 OpenRouter, 会自动转换为 'anthropic/claude-3.5-sonnet' 格式
             stream: 是否使用流式输出，默认为 True
             system_prompt: 系统提示
+            max_tokens：最大输出长度，默认为 8192
 
         Yields:
             tuple[str, str]: (内容类型, 内容)
@@ -50,7 +52,7 @@ class ClaudeClient(BaseClient):
 
         if self.provider == "openrouter":
             # 转换模型名称为 OpenRouter 格式
-            model = "anthropic/claude-3.5-sonnet"
+            # model = "anthropic/claude-3.5-sonnet"
 
             headers = {
                 "Authorization": f"Bearer {self.api_key}",
@@ -65,6 +67,7 @@ class ClaudeClient(BaseClient):
 
             data = {
                 "model": model,  # OpenRouter 使用 anthropic/claude-3.5-sonnet 格式
+                "max_tokens": max_tokens,
                 "messages": messages,
                 "stream": stream,
                 "temperature": 1
@@ -87,6 +90,7 @@ class ClaudeClient(BaseClient):
 
             data = {
                 "model": model,
+                "max_tokens": max_tokens,
                 "messages": messages,
                 "stream": stream,
                 "temperature": 1
@@ -107,8 +111,8 @@ class ClaudeClient(BaseClient):
 
             data = {
                 "model": model,
+                "max_tokens": max_tokens,
                 "messages": messages,
-                "max_tokens": 8192,
                 "stream": stream,
                 "temperature": 1
                 if model_arg[0] < 0 or model_arg[0] > 1

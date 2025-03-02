@@ -91,7 +91,10 @@ class OpenAICompatibleClient(BaseClient):
             raise ClientError(error_msg)
 
     async def stream_chat(
-        self, messages: List[Dict[str, str]], model: str
+        self,
+        messages: List[Dict[str, str]],
+        model: str,
+        max_tokens: int=8192,
     ) -> AsyncGenerator[tuple[str, str], None]:
         """流式对话
 
@@ -108,15 +111,18 @@ class OpenAICompatibleClient(BaseClient):
         headers = self._get_headers()
         processed_messages = self._prepare_messages(messages)
 
+        max_tokens = int(max_tokens)
         data = {
             "model": model,
             "messages": processed_messages,
             "stream": True,
+            "max_tokens": max_tokens,
         }
-
+        logger.debug(f"开始流式对话：{data}")
         buffer = ""
         try:
             async for chunk in self._make_request(headers, data):
+                logger.debug(f"接收到数据：{chunk}")
                 buffer += chunk.decode("utf-8")
                 
                 # 处理 buffer 中的数据行
