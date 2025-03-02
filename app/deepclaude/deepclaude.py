@@ -10,6 +10,14 @@ import tiktoken
 from app.clients import ClaudeClient, DeepSeekClient
 from app.utils.logger import logger
 
+from app.config.getArg import (
+    DEEPSEEK_MAX_TOKENS,
+    DEEPSEEK_TOP_P,
+    DEEPSEEK_TEMPERATURE,
+    OPENAI_COMPOSITE_MAX_TOKENS,
+    OPENAI_COMPOSITE_TOP_P,
+    OPENAI_COMPOSITE_TEMPERATURE
+)
 
 class DeepClaude:
     """处理 DeepSeek 和 Claude API 的流式输出衔接"""
@@ -41,8 +49,6 @@ class DeepClaude:
         model_arg: tuple[float, float, float, float],
         deepseek_model: str = "deepseek-reasoner",
         claude_model: str = "claude-3-5-sonnet-20241022",
-        max_tokens: int = 8192,
-        claude_model_max_tokens: int = 8192,
     ) -> AsyncGenerator[bytes, None]:
         """处理完整的流式输出过程
 
@@ -51,8 +57,6 @@ class DeepClaude:
             model_arg: 模型参数
             deepseek_model: DeepSeek 模型名称
             claude_model: Claude 模型名称
-            max_tokens：最大输出字符数
-            claude_model_max_tokens: Claude 模型最大输出字符数
 
         Yields:
             字节流数据，格式如下：
@@ -88,7 +92,7 @@ class DeepClaude:
             logger.info(f"开始处理 DeepSeek 流，使用模型：{deepseek_model}")
             try:
                 async for content_type, content in self.deepseek_client.stream_chat(
-                    messages, deepseek_model, self.is_origin_reasoning, max_tokens
+                    messages, deepseek_model, self.is_origin_reasoning,
                 ):
                     if content_type == "reasoning":
                         reasoning_content.append(content)
@@ -97,7 +101,9 @@ class DeepClaude:
                             "object": "chat.completion.chunk",
                             "created": created_time,
                             "model": deepseek_model,
-                            "max_tokens": max_tokens,
+                            "max_tokens": DEEPSEEK_MAX_TOKENS,
+                            "temperature": DEEPSEEK_TEMPERATURE,
+                            "top_p": DEEPSEEK_TOP_P,
                             "choices": [
                                 {
                                     "index": 0,
@@ -183,7 +189,6 @@ class DeepClaude:
                     model_arg=model_arg,
                     model=claude_model,
                     system_prompt=system_content,
-                    max_tokens=claude_model_max_tokens,
                 ):
                     if content_type == "answer":
                         response = {
@@ -191,7 +196,9 @@ class DeepClaude:
                             "object": "chat.completion.chunk",
                             "created": created_time,
                             "model": claude_model,
-                            "max_tokens": claude_model_max_tokens,
+                            "max_tokens": OPENAI_COMPOSITE_MAX_TOKENS,
+                            "temperature": OPENAI_COMPOSITE_TEMPERATURE,
+                            "top_p": OPENAI_COMPOSITE_TOP_P,
                             "choices": [
                                 {
                                     "index": 0,
@@ -230,8 +237,6 @@ class DeepClaude:
         model_arg: tuple[float, float, float, float],
         deepseek_model: str = "deepseek-reasoner",
         claude_model: str = "claude-3-5-sonnet-20241022",
-        max_tokens: int = 8192,
-        claude_model_max_tokens=8192,
     ) -> dict:
         """处理非流式输出过程
 
@@ -251,7 +256,7 @@ class DeepClaude:
         # 1. 获取 DeepSeek 的推理内容（仍然使用流式）
         try:
             async for content_type, content in self.deepseek_client.stream_chat(
-                messages, deepseek_model, self.is_origin_reasoning, max_tokens
+                messages, deepseek_model, self.is_origin_reasoning,
             ):
                 if content_type == "reasoning":
                     reasoning_content.append(content)
@@ -315,7 +320,6 @@ class DeepClaude:
                 model=claude_model,
                 stream=False,
                 system_prompt=system_content,
-                max_tokens=claude_model_max_tokens
             ):
                 if content_type == "answer":
                     answer += content

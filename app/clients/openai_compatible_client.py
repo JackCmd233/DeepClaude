@@ -9,6 +9,11 @@ from aiohttp.client_exceptions import ClientError
 from app.clients.base_client import BaseClient
 from app.utils.logger import logger
 
+from app.config.getArg import (
+    OPENAI_COMPOSITE_MAX_TOKENS,
+    OPENAI_COMPOSITE_TOP_P,
+    OPENAI_COMPOSITE_TEMPERATURE
+)
 
 class OpenAICompatibleClient(BaseClient):
     """OpenAI 兼容格式的客户端类
@@ -75,6 +80,9 @@ class OpenAICompatibleClient(BaseClient):
             "model": model,
             "messages": processed_messages,
             "stream": False,
+            "max_tokens": OPENAI_COMPOSITE_MAX_TOKENS,
+            "temperature": OPENAI_COMPOSITE_TEMPERATURE,
+            "top_p": OPENAI_COMPOSITE_TOP_P,
         }
 
         try:
@@ -94,7 +102,6 @@ class OpenAICompatibleClient(BaseClient):
         self,
         messages: List[Dict[str, str]],
         model: str,
-        max_tokens: int=8192,
     ) -> AsyncGenerator[tuple[str, str], None]:
         """流式对话
 
@@ -111,18 +118,19 @@ class OpenAICompatibleClient(BaseClient):
         headers = self._get_headers()
         processed_messages = self._prepare_messages(messages)
 
-        max_tokens = int(max_tokens)
         data = {
             "model": model,
             "messages": processed_messages,
             "stream": True,
-            "max_tokens": max_tokens,
+            "max_tokens": OPENAI_COMPOSITE_MAX_TOKENS,
+            "temperature": OPENAI_COMPOSITE_TEMPERATURE,
+            "top_p": OPENAI_COMPOSITE_TOP_P,
         }
         logger.debug(f"开始流式对话：{data}")
         buffer = ""
         try:
             async for chunk in self._make_request(headers, data):
-                logger.debug(f"接收到数据：{chunk}")
+                logger.debug(f"接收到数据：{chunk}，数据：{data}")
                 buffer += chunk.decode("utf-8")
                 
                 # 处理 buffer 中的数据行

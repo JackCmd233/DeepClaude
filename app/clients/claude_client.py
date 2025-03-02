@@ -7,6 +7,11 @@ from app.utils.logger import logger
 
 from app.clients.base_client import BaseClient
 
+from app.config.getArg import (
+    CLAUDE_MAX_TOKENS,
+    CLAUDE_TOP_P,
+    CLAUDE_TEMPERATURE,
+)
 
 class ClaudeClient(BaseClient):
     def __init__(
@@ -32,7 +37,6 @@ class ClaudeClient(BaseClient):
         model: str,
         stream: bool = True,
         system_prompt: str = None,
-        max_tokens: int = 8192,
     ) -> AsyncGenerator[tuple[str, str], None]:
         """流式或非流式对话
 
@@ -42,7 +46,6 @@ class ClaudeClient(BaseClient):
             model: 模型名称。如果是 OpenRouter, 会自动转换为 'anthropic/claude-3.5-sonnet' 格式
             stream: 是否使用流式输出，默认为 True
             system_prompt: 系统提示
-            max_tokens：最大输出长度，默认为 8192
 
         Yields:
             tuple[str, str]: (内容类型, 内容)
@@ -67,13 +70,13 @@ class ClaudeClient(BaseClient):
 
             data = {
                 "model": model,  # OpenRouter 使用 anthropic/claude-3.5-sonnet 格式
-                "max_tokens": max_tokens,
+                "max_tokens": CLAUDE_MAX_TOKENS,
                 "messages": messages,
                 "stream": stream,
-                "temperature": 1
+                "temperature": CLAUDE_TEMPERATURE
                 if model_arg[0] < 0 or model_arg[0] > 1
                 else model_arg[0],
-                "top_p": model_arg[1],
+                "top_p": CLAUDE_TOP_P,
                 "presence_penalty": model_arg[2],
                 "frequency_penalty": model_arg[3],
             }
@@ -90,13 +93,13 @@ class ClaudeClient(BaseClient):
 
             data = {
                 "model": model,
-                "max_tokens": max_tokens,
+                "max_tokens": CLAUDE_MAX_TOKENS,
                 "messages": messages,
                 "stream": stream,
-                "temperature": 1
+                "temperature": CLAUDE_TEMPERATURE
                 if model_arg[0] < 0 or model_arg[0] > 1
                 else model_arg[0],
-                "top_p": model_arg[1],
+                "top_p": CLAUDE_TOP_P,
                 "presence_penalty": model_arg[2],
                 "frequency_penalty": model_arg[3],
             }
@@ -111,13 +114,13 @@ class ClaudeClient(BaseClient):
 
             data = {
                 "model": model,
-                "max_tokens": max_tokens,
+                "max_tokens": CLAUDE_MAX_TOKENS,
                 "messages": messages,
                 "stream": stream,
-                "temperature": 1
+                "temperature": CLAUDE_TEMPERATURE
                 if model_arg[0] < 0 or model_arg[0] > 1
                 else model_arg[0],  # Claude仅支持temperature与top_p
-                "top_p": model_arg[1],
+                "top_p": CLAUDE_TOP_P,
             }
             
             # Anthropic 原生 API 支持 system 参数
